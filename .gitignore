@@ -1,0 +1,7 @@
+/etc
+/Include
+/Lib
+/Scripts
+/share
+git_token.txt
+pyvenv.cfg
