@@ -11,25 +11,38 @@ load_dotenv()
 
 class Chat2Vis:
     def __init__(self, api_key=None, model="gpt-4o-mini"):
-        self.system_prompt = "You are a helpful assistant good at data visualization. The code you generate should be in the format like {code}...{/code}."
+        self.system_prompt = "You are a helpful assistant good at data visualization. The code you generate should be in the format like ```...```."
         self.api_key = api_key or os.getenv("API_KEY")
         self.client = AsyncOpenAI(self.api_key)
         self.model = model
-        self.template = """\
-        Use a dataframe called df from data_file.csv with columns {columns} .
+        self.template_data = """\
+        Data path: {data_path}
+
+        Columns of {data_path}: {columns} .
 
         {columns_description}
+        """
 
-        Label the x and y axes appropriately. Add a title. Set the fig suptitle as empty •
+        self.template_all = """\
+        Name the data provided below as df1, df2, ...
 
-        Using Python version 3.9.12, create a script using the dataframe df to graph the following:
+        Data description:
+
+        {data_description}
+        
+        Instruction:
+
+        Label the x and y axes appropriately. Add a title. Set the fig suptitle as empty. 
+
+        Using Python version 3.9.12, create a script using those dataframes to graph the following:
 
         {nl_query}
 
-        Below is the head of the code, you should write the code with them as the head, in the format of {code}...{/code}.
+        Below is the head of the code, you should write the code with them as the head, in the format of ```...```.
 
         import pandas as pd
         import matplotlib.pyplot as plt
+        import seaborn as sns
 
         fig, ax = plt.subplots(1, 1, figsize=(10, 4))
         ax.spines['top'].set_visible(False)
@@ -101,21 +114,29 @@ class Chat2Vis:
 
         return " ".join(descriptions)
 
-    async def get_code_content(self, nl_query, data_path=None):
-        columns_description = ""
-        if data_path:
-            data = pd.read_csv(data_path)
-            columns = "'" + "', '".join(list(data.columns)) + "'"
-            columns_description = self.table_format(data)
+    async def get_code_content(self, nl_query, data_path_list=None):
+        data_description = ''
+        if data_path_list:
+            data_description_list = []
+            for data_path in data_path_list:
+                data = pd.read_csv(data_path)
+                columns = "'" + "', '".join(list(data.columns)) + "'"
+                columns_description = self.table_format(data)
+                single_description = self.template_data.format(
+                        data_path = data_path,
+                        columns="'" + "', '".join(list(data.columns)) + "'", 
+                        columns_description=columns_description,
+                        )
+                data_description_list.append(single_description)
+            data_description = "[" + "], [".join(data_description_list) + "]"
         
-        prompt = self.template.format(
-            columns="'" + "', '".join(list(data.columns)) + "'" if data_path else "",
-            columns_description=columns_description,
+        prompt = self.template_all.format(
+            data_description=data_description,
             nl_query=nl_query,
         )
         
         response_text = await self.call_openai_api(self.system_prompt, prompt)
-        match = re.search(r"\{code\}(.*?)\{/code\}", response_text, flags=re.DOTALL)
+        match = re.search(r"```(.*?)```", response_text, flags=re.DOTALL)
         if match:
             return match.group(1).strip()
         else:
