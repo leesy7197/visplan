@@ -29,7 +29,7 @@ class Cot2vis:
             "dtypes": data.dtypes.to_dict(),
             "shape": data.shape,
         }
-        return description
+        return str(description)
 
     async def call_openai_api(self, user_query, data_description):
         # Retry indefinitely until successful
