@@ -20,7 +20,7 @@ class Cot2vis:
             api_key=self.api_key
         )
 
-    def describe_data(data_path):
+    def describe_data(self, data_path):
         # Read the data file using pandas
         data = pd.read_csv(data_path)
         description = {
@@ -68,5 +68,5 @@ class Cot2vis:
             data_description = 'There is no dataset provided.'
 
         # Call API and return the generated code
-        code_content = await self.call_openai_api(self, user_query, data_description)
+        code_content = await self.call_openai_api(user_query, data_description)
         return code_content
