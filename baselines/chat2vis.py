@@ -129,6 +129,8 @@ class Chat2Vis:
                         )
                 data_description_list.append(single_description)
             data_description = "[" + "], [".join(data_description_list) + "]"
+        else :
+            data_description = "There is no dataset provided."
         
         prompt = self.template_all.format(
             data_description=data_description,
