@@ -147,8 +147,8 @@ class VisPathFeedback:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
-
     async def visual_feedback(self, ori_query, code):
+        img_path = ./temp
 		# Save the plot as an image using the provided code
 		success = code_to_image(code, img_path)
 		if not success:
