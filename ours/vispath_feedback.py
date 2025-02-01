@@ -131,8 +131,59 @@ class VisPathFeedback:
 
         return generated_code_list
 
+    # Function to execute the code and save the plot as an image
+    def code_to_image(code, img_path):
+        exec_globals = {"plt": plt, "io": io}  # Define the global context for the code execution
+        exec_locals = {}  # Local context for the code execution
+        code = code.replace("plt.show()", f"plt.savefig('{img_path}')")  # Replace plt.show() with savefig to save the image
+        try:
+            exec(code, exec_globals, exec_locals)  # Execute the code
+            return True  # Return True if the code executed successfully
+        except Exception as e:
+            return False  # Return False if an error occurred during code execution
+
+    # Function to encode the image to base64 format
+    def encode_image(image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+
+
     async def visual_feedback(self, ori_query, code):
-        ... you can insert your code here
+		# Save the plot as an image using the provided code
+		success = code_to_image(code, img_path)
+		if not success:
+			return "Error in saving the image."  # Return an error message if image saving fails
+	
+		# Encode the image to base64 for sending as a message
+		base64_image = encode_image(img_path)
+		
+		# Prepare the information to be sent to GPT-4o for feedback analysis
+		information = {
+			'query': ori_query,
+			'code': code
+		}
+	
+		# Prepare the messages for GPT-4o, including the system prompt, user prompt with code and query, and the image
+		messages = [
+			{"role": "system", 
+			"content": '''Given a piece of code, a user query, and an image of the current plot, please determine whether the plot has faithfully followed the user query. Your task is to provide instruction to make sure the plot has strictly completed the requirements of the query. Please output a detailed step by step instruction on how to use python code to enhance the plot.'''
+			},
+			{"role": "user", 
+			"content": '''Here is the code: [Code]:
+	"""
+	{{code}}
+	"""
+	
+	Here is the user query: [Query]:
+	"""
+	{{query}}
+	"""
+	
+	Carefully read and analyze the user query to understand the specific requirements. Examine the provided Python code to understand how the current plot is generated. Check if the code aligns with the user query in terms of data selection, plot type, and any specific customization. Look at the provided image of the plot. Assess the plot type, the data it represents, labels, titles, colors, and any other visual elements. Compare these elements with the requirements specified in the user query. Note any differences between the user query requirements and the current plot. Based on the identified discrepancies, provide step-by-step instructions on how to modify the Python code to meet the user query requirements. Suggest improvements for better visualization practices, such as clarity, readability, and aesthetics, while ensuring the primary focus is on meeting the user's specified requirements.'''}
+		]
+		messages[-1]["content"] += f"\n\n![plot](data:image/png;base64,{base64_image})"
+		# Call the completion function to get feedback from GPT-4
+		feedback = await self._call_openai_api(messages[0]['content'], messages[-1]['content'])
 
         return feedback
 
