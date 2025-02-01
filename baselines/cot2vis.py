@@ -61,7 +61,7 @@ class Cot2vis:
         if data_path_list:
             data_description_list = []
             for data_path in data_path_list:
-                single_data_description = describe_data(data_path)
+                single_data_description = self.describe_data(data_path)
                 data_description_list.append(single_data_description)
             data_description = "[" + "], [".join(data_description_list) + "]"
         else :
