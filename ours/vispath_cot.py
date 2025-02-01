@@ -5,13 +5,14 @@ import pandas as pd
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 import ast
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Load environment variables
 load_dotenv()
 
-
-class Visplan:
-    def __init__(self, api_key=None, model="gpt-4o-mini", system_prompt_expansion=None, system_prompt_codegen=None, template_expansion=None, template_codegen=None):
+class VisPathCot:
+    def __init__(self, api_key=None, model="gpt-4o-mini", system_prompt_expansion=None, system_prompt_codegen=None, template_expansion=None, template_codegen=None, system_prompt_aggregation=None, template_aggregation=None):
         self.api_key = api_key or os.getenv("API_KEY")
         self.model = model
 
@@ -35,6 +36,16 @@ class Visplan:
 
                 Data description: {data_description}
                 """
+        self.system_prompt_aggregation=system_prompt_aggregation or "You are an expert on data visualization code judgement and aggregation."
+
+        self.template_aggregation=template_aggregation or """\
+                Tink step by step, plan before think. Given the provided user query, data description and several data visualization codes generated for the query, generate a final version of code to fullfill the user query. You should write the generated code in the format of ```...```, where ... indicates the generated code.
+                User Query: {ori_query}
+
+                Data Description: {data_description}
+
+                Code for aggregation: {code_for_aggregation}
+                """
 
     def describe_data(self, data_path):
         # Read the data file using pandas
@@ -46,6 +57,18 @@ class Visplan:
             "shape": data.shape,
         }
         return str(description)
+
+    def describe_data_list(self, data_path_list):
+        if data_path_list:
+            data_description_list = []
+            for data_path in data_path_list:
+                single_data_description = self.describe_data(data_path)
+                data_description_list.append(single_data_description)
+            data_description = "[" + "], [".join(data_description_list) + "]"
+        else :
+            data_description = 'There is no dataset provided, please generate code based on the content of query.'
+
+        return data_description
 
     async def call_openai_api(self, system_prompt, user_content):
         while True:
@@ -82,16 +105,7 @@ class Visplan:
         else:
             return None
 
-    async def single_codegen(self, query, data_path_list):
-        if data_path_list:
-            data_description_list = []
-            for data_path in data_path_list:
-                single_data_description = self.describe_data(data_path)
-                data_description_list.append(single_data_description)
-            data_description = "[" + "], [".join(data_description_list) + "]"
-        else :
-            data_description = 'There is no dataset provided, please generate code based on the content of query.'
-
+    async def single_codegen(self, query, data_description):
         # Call API and return the generated code
         prompt=self.template_codegen.format(
                 query=query,
@@ -106,10 +120,31 @@ class Visplan:
         else:
             return None
 
-    async def codegen_agent(self, extend_query_list, data_path_list):
-        tasks = [self.single_codegen(query, data_path_list) for query in extend_query_list]
+    async def codegen_agent(self, ori_query, extend_query_list, data_description):
+        tasks = [self.single_codegen(query, data_description) for query in extend_query_list]
 
         generated_code_list = await asyncio.gather(*tasks)
 
+        ori_generated_code = await self.single_codegen(ori_query, data_description)
+
+        generated_code_list.append(ori_generated_code)
+
         return generated_code_list
 
+    async def get_code_content(self, ori_query, data_path_list):
+        data_description = self.describe_data_list(data_path_list)
+        extend_query_list = await self.expansion_agent(ori_query)
+        generated_code_list = await self.codegen_agent(extend_query_list, data_description)
+        code_for_aggregation="{" + "}\n\n{".join(generated_code_list) + "}"
+        prompt = self.template_aggregation.format(
+                ori_query=ori_query,
+                data_description=data_description,
+                code_for_aggregation=code_for_aggregation
+                )
+        response_text = await self.call_openai_api(self.system_prompt_aggregation, prompt)
+        match = re.search(r"```(.*?)```", response_text, flags=re.DOTALL)
+        if match:
+            code_content = match.group(1).strip()
+            return code_content
+        else:
+            return None
