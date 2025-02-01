@@ -1,0 +1,39 @@
+
+## MatplotBench ## 100
+1. Code Executability (w/GPT-4) -> Code(matplot)
+2. Plot correctness (w/GPT-4v) -> Image
+
+## VisEval ## 1150
+1. Code Executability (w/GPT-4) -> Code(matplot)
+2. Vegalite Specification Component matching accuracy (w/GPT-4) -> Code(Vegalite)
+3. Plot correctness (w/GPT-4v) -> Image
+
+== Issue ==
+1. too much cost using nvBench -> Using 2 benchmark datasets 
+2. what llm use in evalution -> GPT4o, GPT4v
+3. Output of each baseline
+
+[Need Output]
+- code(matplotlib)
+- vegalite specification
+- plot image
+
+[Our Baseline]
+1. (Zero-shot) Direct generate code ( Cot ) 
+2. (Comparison) Chat2Vis 
+3. (Few-shot) ChartLlama 
+4. (Pipeline) MatPLotAgent
+5. Our proposed framework
+
+## nvBench ## 7000
+1. Vegalite Specification Component matching accuracy (w/GPT-4)
+2. Plot correctness (w/GPT-4v)
+
+
+python evaluation/eval_workflow.py --benchmark=matplotbench --baseline=cot2vis
+python evaluation/eval_workflow.py --benchmark=matplotbench --baseline=chat2vis
+python evaluation/eval_workflow.py --benchmark=matplotbench --baseline=matplotagent
+
+python evaluation/eval_workflow.py --benchmark=viseval --baseline=cot2vis
+python evaluation/eval_workflow.py --benchmark=viseval --baseline=chat2vis
+python evaluation/eval_workflow.py --benchmark=viseval --baseline=matplotagent
