@@ -11,7 +11,7 @@ import seaborn as sns
 # Load environment variables
 load_dotenv()
 
-class VisPathCot:
+class VisPathIntegration:
     def __init__(self, api_key=None, model="gpt-4o-mini", system_prompt_expansion=None, system_prompt_codegen=None, template_expansion=None, template_codegen=None, system_prompt_aggregation=None, template_aggregation=None):
         self.api_key = api_key or os.getenv("API_KEY")
         self.model = model
