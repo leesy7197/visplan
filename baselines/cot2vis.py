@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Cot2vis:
-    def __init__(self, api_key=None, model="gpt-4o-mini", system_prompt=None):
+    def __init__(self, api_key=None, model="gpt-4o-mini", system_prompt=None, temperature=0.2):
         # Use environment variables if no parameters are provided
         self.api_key = api_key or os.getenv("API_KEY")
         self.model = model
@@ -44,7 +44,8 @@ class Cot2vis:
                     messages=[
                         {"role": "system", "content": self.system_prompt},
                         {"role": "user", "content": full_query}
-                    ]
+                    ],
+                    temperature=self.temperature
                 )
                 
                 # Extract the code content from the response

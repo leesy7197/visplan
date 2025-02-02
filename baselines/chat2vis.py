@@ -10,7 +10,7 @@ import warnings
 load_dotenv()
 
 class Chat2Vis:
-    def __init__(self, api_key=None, model="gpt-4o-mini"):
+    def __init__(self, api_key=None, model="gpt-4o-mini", temperature=0.2):
         self.system_prompt = "You are a helpful assistant good at data visualization. The code you generate should be in the format like ```...```."
         self.api_key = api_key or os.getenv("API_KEY")
         self.client = AsyncOpenAI(self.api_key)
@@ -57,7 +57,8 @@ class Chat2Vis:
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}
-                    ]
+                    ],
+                    temperature=self.temperature
                 )
                 return response.choices[0].message.content
             except Exception as e:

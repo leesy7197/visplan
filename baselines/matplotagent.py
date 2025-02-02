@@ -14,7 +14,7 @@ QUERY_EXPANSION_PROMPT='''According to the user query, expand and solidify the q
 SYSTEM_PROMPT_CODE_GEN='''You are a helpful assistant that generates Python code for data visualization and analysis using matplotlib, seaborn and pandas. Given a detailed instruction and data description, generate the appropriate code in the format of ```...```'''
 
 class MatplotAgent:
-    def __init__(self, api_key=None, model="gpt-4o-mini"):
+    def __init__(self, api_key=None, model="gpt-4o-mini", temperature=0.2):
         self.api_key = api_key or os.getenv("API_KEY")
         self.model = model
         self.client = AsyncOpenAI(api_key=self.api_key)
@@ -27,7 +27,8 @@ class MatplotAgent:
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}
-                    ]
+                    ],
+                    temperature=self.temperature
                 )
                 return response.choices[0].message.content
             except Exception as e:

@@ -12,7 +12,7 @@ import seaborn as sns
 load_dotenv()
 
 class VisPathFeedback:
-    def __init__(self, api_key=None, model="gpt-4o-mini", system_prompt_expansion=None, system_prompt_codegen=None, template_expansion=None, template_codegen=None, system_prompt_aggregation=None, template_aggregation=None):
+    def __init__(self, api_key=None, model="gpt-4o-mini", system_prompt_expansion=None, system_prompt_codegen=None, template_expansion=None, template_codegen=None, system_prompt_aggregation=None, template_aggregation=None, temperature=0.2):
         self.api_key = api_key or os.getenv("API_KEY")
         self.model = model
 
@@ -78,7 +78,8 @@ class VisPathFeedback:
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}
-                    ]
+                    ],
+                    temperature=self.temperature
                 )
                 return response.choices[0].message.content
             except Exception as e:
